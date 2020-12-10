@@ -1,1 +1,1 @@
-# DataViz.github.io
+# DataViz
