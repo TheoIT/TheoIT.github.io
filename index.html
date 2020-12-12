@@ -2,7 +2,6 @@
 <head>
   <meta charset="utf-8" />
   <script src="https://d3js.org/d3.v6.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/bumbeishvili/d3-tip-for-v6@4/d3-tip.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -11,14 +10,6 @@
       right: 0;
       bottom: 0;
       left: 0;
-    }
-    .d3-tip {
-      padding: 20px;
-      color: #203d5d;
-      box-shadow: 0 4px 20px 4px rgba(0, 20, 60, 0.1),
-        0 4px 80px -8px rgba(0, 20, 60, 0.2);
-      background-color: #fff;
-      border-radius: 4px;
     }
   </style>
 </head>
@@ -38,76 +29,19 @@
     var g = svg.append("g");
 
     var projection = d3
-      .geoConicConformal()
-      .center([2.454071, 46.279229])
-      .scale(2800)
-      .translate([width / 2, height / 2]);
-
-    var color = d3
-      .scaleLinear()
-      .domain([1, 2000])
-      .range(["#e6fae6", "#005700"]);
+      .geoAlbersUsa()
+      .translate([width / 2, height / 2])
+      .scale([500]);
 
     var path = d3.geoPath().projection(projection);
 
-    d3.csv("covid-france-mars-avril.csv").then(function (data) {
-      d3.json("departements-version-simplifiee.geojson").then(function (json) {
-        for (var i = 0; i < data.length; i++) {
-          //Nom, hospitalisations et date du département
-          var dataState = data[i].Département;
-          var dataValue = parseInt(data[i].hosp);
-          var dataDate = data[i].jour;
-
-          //Recherche de l'etat dans le GeoJSON
-          for (var j = 0; j < json.features.length; j++) {
-            var jsonState = json.features[j].properties.nom;
-            if (dataState == jsonState) {
-              //On injecte la valeur de l'Etat dans le json
-              json.features[j].properties.value = dataValue;
-              json.features[j].properties.date = dataDate;
-              //Pas besoin de chercher plus loin
-              break;
-            }
-          }
-        }
-        //tooltip
-        var tip = d3
-          .tip()
-          .attr("class", "d3-tip")
-          .offset([-5, 0])
-          .html(function (event, d) {
-            if (d.properties.value != undefined) {
-              return (
-                d.properties.nom +
-                " : " +
-                d.properties.value +
-                " hospitalisations le " +
-                d.properties.date
-              );
-            } else return "Pas de données pour " + d.properties.nom;
-          });
-        g.call(tip);
-
-        g.selectAll("path")
-          .data(json.features)
-          .enter()
-          .append("path")
-          //appel du tooltip
-          .on("mouseover", (event, d) => {
-            tip.show(event, d);
-          })
-          .on("mouseout", tip.hide)
-          .style("fill", function (d) {
-            var value = d.properties.value;
-            if (value) {
-              return color(value);
-            } else {
-              // si pas de valeur alors en gris
-              return "#ccc";
-            }
-          })
-          .attr("d", path);
-      });
+    d3.json("us-states.json").then(function (jsondata) {
+      g.selectAll("path")
+        .data(jsondata.features)
+        .enter()
+        .append("path")
+        .attr("fill", "#ccc")
+        .attr("d", path);
     });
   </script>
 </body>
