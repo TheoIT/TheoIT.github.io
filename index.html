@@ -16,7 +16,7 @@
         .select("div#container")
         .append("svg")
         .attr("preserveAspectRatio", "xMinYMin meet")
-        .style("background-color", "#c9e8fd")
+        .style("background-color", "#323334")
         .attr("viewBox", "0 0 " + w + " " + h)
         .classed("svg-content", true);
     var projection = d3
@@ -30,20 +30,19 @@
     var worldmap = d3.json("world-countries-no-antartica.json");
     var cities = d3.csv("cities.csv");
     var temperatures = d3.csv("TempEurope.csv");
+    var winterTemp = d3.csv("winterTemp.csv");
+    var summerTemp = d3.csv("summerTemp.csv");
 
-    Promise.all([worldmap, cities, temperatures]).then(function (values) {
-        // values[2].forEach(funtion(temp) {
-        //     temp
-        // })
-
-        // draw map
+    Promise.all([worldmap, cities, winterTemp,summerTemp]).then(function (values) {
+        var winterTemp = values[2];
+        var summerTemp = values[3];
         svg
             .selectAll("path")
             .data(values[0].features)
             .enter()
             .append("path")
             .attr("class", "continent")
-            .attr("id", d => d.name)
+            .attr("id", d => d.properties.name)
             .attr("d", path),
             // draw points
             svg
@@ -75,6 +74,37 @@
                     return projection([d.Longitude, d.Lattitude])[1] + 15;
                 })
                 .attr("class", "labels");
+        svg.append("text")
+            .attr("x", (w / 2))
+            .attr("y", 45)
+            .attr("text-anchor", "middle")
+            .style("fill", "#323334")
+            .style("font-weight", "300")
+            .style("font-size", "40px")
+            .text("Évolution de la température en Europe");
+
+        const winter = {
+            colors : ['#d4eac7', '#c6e3b5', '#b7dda2', '#a9d68f', '#9bcf7d', '#8cc86a', '#7ec157', '#77be4e', '#70ba45', '#65a83e', '#599537', '#4e8230', '#437029', '#385d22', '#2d4a1c', '#223815'],
+            min : d3.min(winterTemp, d => d.Statistics.includes('Feb') ? +d.Temperature : NaN),
+            max : d3.max(winterTemp, d =>  d.Statistics.includes('Feb') ? +d.Temperature : NaN)
+        }
+        winter.quantile = d3.scaleQuantile().domain([winter.min, winter.max]).range(winter.colors);
+
+        const summer = {
+            colors : ['#ff9966', '#fc9161', '#fa8a5c', '#f78257', '#f57a52', '#f2734c', '#f06b47', '#ed6342', '#eb5c3d', '#e85438', '#e64c33', '#e3452e', '#e03d29', '#de3624', '#db2e1f', '#d61f14'],
+            min : d3.min(summerTemp, d => d.Statistics.includes('Aug') ? +d.Temperature : NaN),
+            max : d3.max(summerTemp, d =>  d.Statistics.includes('Aug') ? +d.Temperature : NaN)
+        };
+        summer.quantile = d3.scaleQuantile().domain([summer.min, summer.max]).range(summer.colors);
+
+        summerTemp.forEach(function(e,i) {
+            if(e.Year == "2010") {
+                var countryPath = d3.select("#" + e.Country);
+                countryPath
+                    .attr("scorecolor", summer.quantile(+e.Temperature))
+                    .style("fill", summer.quantile(+e.Temperature));
+            }
+        });
     });
 </script>
 </body>
