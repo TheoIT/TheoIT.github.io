@@ -15,7 +15,7 @@
         h = 1100,
         legendCellSize = 22;
     var winter = {colors : ['#d4eac7', '#c6e3b5', '#b7dda2', '#a9d68f', '#9bcf7d', '#8cc86a', '#7ec157', '#77be4e', '#70ba45', '#65a83e', '#599537', '#4e8230', '#437029', '#385d22', '#2d4a1c', '#223815'] },
-        summer = {colors : ['#ff9966', '#fc9161', '#fa8a5c', '#f78257', '#f57a52', '#f2734c', '#f06b47', '#ed6342', '#eb5c3d', '#e85438', '#e64c33', '#e3452e', '#e03d29', '#de3624', '#db2e1f', '#d61f14']};
+        summer = {colors : ['#ffc2a3','#ffad85','#ff9966', '#fc9161', '#fa8a5c', '#f78257', '#f57a52', '#f2734c', '#f06b47', '#ed6342', '#eb5c3d', '#e85438', '#e64c33', '#e3452e', '#e03d29', '#de3624', '#db2e1f', '#d61f14','#d2140d','#cc0000']};
     var year = 2012;
     var svg = d3
         .select("div#container")
@@ -118,7 +118,7 @@
     }
     function addLegend(min, max,colors) {
         var legend = svg.append('g')
-            .attr('transform', 'translate(40, 200)')
+            .attr('transform', 'translate(40, 280)')
             .attr("id", "legend");
 
         legend.selectAll()
@@ -229,10 +229,39 @@
         var margin = {top: 10, right: 30, bottom: 30, left: 60},
             height = 400 - margin.top - margin.bottom;
         var chart = svg.append("g")
-            .attr("width", w + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
             .attr("transform",
-                "translate(" + margin.left + "," + margin.top + ")");
+                "translate(163,700)");
+
+        d3.csv("tempByYear.csv").then(function(data) {
+                // Add X axis --> it is a date format
+                var x = d3.scaleTime()
+                    .domain(d3.extent(data, function(d) { return d3.timeParse("%Y")(d.Year); }))
+                    .range([ 0, 717 ]);
+                chart.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(x));
+
+                // Add Y axis
+                var y = d3.scaleLinear()
+                    .domain([d3.min(data, function(d) { return +d.Temperature; }), d3.max(data, function(d) { return +d.Temperature; })])
+                    .range([ height, 100 ]);
+                chart.append("g")
+                    .attr("class", "axis")
+                    .call(d3.axisLeft(y));
+
+                // Add the line
+                chart.append("path")
+                    .datum(data)
+                    .attr("fill", "none")
+                    .attr("stroke", "#FFA57D")
+                    .attr("stroke-width", 2)
+                    .attr("d", d3.line()
+                        .x(function(d) { return x(d3.timeParse("%Y")(d.Year)) })
+                        .y(function(d) { return y(d.Temperature) })
+                    )
+
+            })
     }
     function getColorIndex(color) {
         for (var i = 0; i < summer.colors.length; i++) {

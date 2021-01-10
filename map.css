@@ -1,27 +1,17 @@
 .continent {
-    stroke: #FFFFFF;
+    stroke: #B1E2EB;
     stroke-width: 0.3;
-    fill: #999999;
-}
-
-.circles {
-    fill: #3c373d;
-}
-
-.labels {
-    font-family: sans-serif;
-    font-size: 11px;
-    fill: #3c373d;
+    fill: #323334;
 }
 
 .axis line {
-    stroke: #FFC5AB;
+    stroke: #B1E2EB;
 }
 
 .axis path {
-    stroke: #FFC5AB;
+    stroke:#B1E2EB;
 }
 
 .axis text {
-    fill: #FFC5AB;
+    fill: #B1E2EB;
 }
