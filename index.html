@@ -11,15 +11,17 @@
 <div id="container" class="svg-container"></div>
 <div id="chart"></div>
 <script type="text/javascript">
-    const w = 1000,
-        h = 1100,
+    const w = 1550,
+        h = 790,
         legendCellSize = 22;
     var winter = {colors : ['#d4eac7', '#c6e3b5', '#b7dda2', '#a9d68f', '#9bcf7d', '#8cc86a', '#7ec157', '#77be4e', '#70ba45', '#65a83e', '#599537', '#4e8230', '#437029', '#385d22', '#2d4a1c', '#223815'] },
         summer = {colors : ['#ffc2a3','#ffad85','#ff9966', '#fc9161', '#fa8a5c', '#f78257', '#f57a52', '#f2734c', '#f06b47', '#ed6342', '#eb5c3d', '#e85438', '#e64c33', '#e3452e', '#e03d29', '#de3624', '#db2e1f', '#d61f14','#d2140d','#cc0000']};
-    var year = 2012;
+    var year = 1904;
     var svg = d3
         .select("div#container")
         .append("svg")
+        //.attr("width",w)
+        //.attr("height",h)
         .attr("preserveAspectRatio", "xMinYMin meet")
         .style("background-color", "#323334")
         .attr("viewBox", "0 0 " + w + " " + h)
@@ -27,8 +29,8 @@
     var projection = d3
         .geoMercator()
         .translate([w / 2, h / 2])
-        .scale(250)
-        .center([-60, -10]);
+        .scale(265)
+        .center([7, 32]);
     var path = d3.geoPath().projection(projection);
 
     // load data
@@ -47,25 +49,36 @@
             .append("path")
             .attr("class", "continent")
             .attr("id", d => d.properties.name)
-            .attr("d", path),
+            .attr("d", path);
 
-        svg.append("rect")
+        var title = svg.append("g");
+        title.append("rect")
             .style("fill","#323334")
             .attr("width",w)
             .attr("height",60);
-        svg.append("rect")
-            .attr("y",h-360)
-            .style("fill","#323334")
-            .attr("width",w)
-            .attr("height",360);
-        svg.append("text")
+        title.append("text")
             .attr("x", (w / 2))
             .attr("y", 45)
             .attr("text-anchor", "middle")
             .style("fill", "#FFA57D")
             .style("font-weight", "300")
-            .style("font-size", "40px")
+            .style("font-size", "32px")
             .text("Évolution de la température en Europe");
+        svg.append("text")
+            .attr("x", (w / 2)-12)
+            .attr("y", 92)
+            .attr("text-anchor", "middle")
+            .attr("id","h2")
+            .style("fill", "#929292")
+            .style("font-weight", "200")
+            .style("font-size", "32px")
+            .text(year);
+        svg.append("rect")
+            .attr("y",h-390)
+            .attr("x",740)
+            .style("fill","#323334")
+            .attr("width",820)
+            .attr("height",360);
 
         winter.min = d3.min(winterTemp, d => d.Statistics.includes('Feb') ? +d.Temperature : NaN);
         winter.max = d3.max(winterTemp, d =>  d.Statistics.includes('Feb') ? +d.Temperature : NaN);
@@ -78,11 +91,11 @@
         var legend = addLegend(summer.min, summer.max, summer.colors);
         var tooltip = addTooltip();
         var slider = addSlider(parseInt(d3.min(summerTemp, d => d.Year)),parseInt(d3.max(summerTemp, d => d.Year)));
-        addChart();
-        drawMap(year,summerTemp);
+        addChart(year);
+        colorMap(year,summerTemp);
     });
 
-    function drawMap(year, temps) {
+    function colorMap(year, temps) {
         temps.filter(temp => temp.Year == year).forEach(function (e, i) {
             // addColor(e.Country, e.Year , summer.quantile(+e.Temperature));
             //if (e.Year == "2015") {
@@ -118,7 +131,7 @@
     }
     function addLegend(min, max,colors) {
         var legend = svg.append('g')
-            .attr('transform', 'translate(40, 280)')
+            .attr('transform', 'translate(50, 300)')
             .attr("id", "legend");
 
         legend.selectAll()
@@ -211,57 +224,87 @@
             .tickFormat(d3.timeFormat('%Y'))
             .tickValues(dataTime)
             .default(new Date(year, 10, 3))
+            .handle(
+                d3
+                    .symbol()
+                    .type(d3.symbolCircle)
+                    .size(400)()
+            )
             .on('onchange', val => {
-                drawMap(val.getFullYear(), summerTemp);
+                colorMap(val.getFullYear(), summerTemp);
+                addChart(val.getFullYear());
+                d3.select('#h2').text(val.getFullYear());
             });
 
         var gTime = svg.append('g')
             //.attr('width', 50)
             //.attr('height', 100)
-            .attr('transform', 'translate(180,756)');
+            .attr('transform', 'translate(790,420)');
+
 
         gTime.call(sliderTime);
 
         d3.select('p#value-time').text(d3.timeFormat('%Y')(sliderTime.value()));
     }
 
-    function addChart() {
+    function addChart(maxDate) {
         var margin = {top: 10, right: 30, bottom: 30, left: 60},
-            height = 400 - margin.top - margin.bottom;
-        var chart = svg.append("g")
-            .attr("transform",
-                "translate(163,700)");
+            height = 400 - margin.top - margin.bottom,
+            chart;
 
         d3.csv("tempByYear.csv").then(function(data) {
-                // Add X axis --> it is a date format
-                var x = d3.scaleTime()
-                    .domain(d3.extent(data, function(d) { return d3.timeParse("%Y")(d.Year); }))
-                    .range([ 0, 717 ]);
-                chart.append("g")
-                    .attr("class", "axis")
-                    .attr("transform", "translate(0," + height + ")")
-                    .call(d3.axisBottom(x));
+            // Add X axis --> it is a date format
+            var x = d3.scaleTime()
+                .domain(d3.extent(data, function(d) { return d3.timeParse("%Y")(d.Year); }))
+                .range([ 0, 717 ]);
 
-                // Add Y axis
-                var y = d3.scaleLinear()
-                    .domain([d3.min(data, function(d) { return +d.Temperature; }), d3.max(data, function(d) { return +d.Temperature; })])
-                    .range([ height, 100 ]);
-                chart.append("g")
-                    .attr("class", "axis")
-                    .call(d3.axisLeft(y));
+            var y = d3.scaleLinear()
+                .domain([d3.min(data, function(d) { return +d.Temperature; }), d3.max(data, function(d) { return +d.Temperature; })])
+                .range([ height, 100 ]);
 
-                // Add the line
+            //pour update le graph on l'efface et on le redraw
+            d3.select('#chart').remove();
+
+            chart = svg.append("g")
+                .attr("transform",
+                    "translate(780,380)")
+                .attr("id","chart");
+            chart.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x));
+            chart.append("g")
+                .attr("class", "axis")
+                .call(d3.axisLeft(y));
+
+            // Add the line
+            data2 = [{x:1902,y:18.6},{x:2016,y:19.8}]
+            var datafilter = data.filter(d => d.Year <= maxDate);
+            chart.append("path")
+                .datum(datafilter)
+                .attr("fill", "none")
+                .attr("stroke", "#FFA57D")
+                .attr("stroke-width", 2)
+                .attr("d", d3.line()
+                    .x(function(d) { return x(d3.timeParse("%Y")(d.Year)) })
+                    .y(function(d) { return y(d.Temperature) })
+                )
+            if(maxDate == 2016) {
                 chart.append("path")
-                    .datum(data)
+                    .datum(data2)
                     .attr("fill", "none")
-                    .attr("stroke", "#FFA57D")
+                    .attr("stroke", "RED")
                     .attr("stroke-width", 2)
                     .attr("d", d3.line()
-                        .x(function(d) { return x(d3.timeParse("%Y")(d.Year)) })
-                        .y(function(d) { return y(d.Temperature) })
+                        .x(function (d) {
+                            return x(d3.timeParse("%Y")(d.x))
+                        })
+                        .y(function (d) {
+                            return y(d.y)
+                        })
                     )
-
-            })
+            }
+        })
     }
     function getColorIndex(color) {
         for (var i = 0; i < summer.colors.length; i++) {
